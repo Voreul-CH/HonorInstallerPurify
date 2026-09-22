@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="io.github.voreul_ch.installerpurify"
+    package="io.github.voreulch.installerpurify"
     android:versionCode="4"
     android:versionName="2.2">
 
@@ -16,7 +16,7 @@
             android:value="true" />
         <meta-data
             android:name="xposeddescription"
-            android:value="跳过安装器的联网安全检测与安装前指纹验证" />
+            android:value="跳过荣耀安装器的安全验证&amp;禁止联网上报 by VoreulCH@GitHub" />
         <meta-data
             android:name="xposedminversion"
             android:value="93" />
