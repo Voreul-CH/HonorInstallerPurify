@@ -124,7 +124,7 @@ at any JRE 8+.
 ├── AndroidManifest.xml        # xposedmodule 元数据与作用域 / module meta + scope
 ├── assets/xposed_init         # Xposed 入口声明 / entry declaration
 ├── res/values/strings.xml     # 应用名与 xposedscope / app name + scope array
-├── src/com/fxxkhonor/packageinstaller/
+├── src/io/github/voreul_ch/installerpurify/
 │   └── MainHook.java          # 全部 Hook 逻辑 / all hook logic
 └── build.ps1                  # 一键构建流水线 / one-shot build pipeline
 ```
