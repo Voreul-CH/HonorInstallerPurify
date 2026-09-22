@@ -16,7 +16,7 @@ $env:PATH = "$jreBin;$env:PATH"
 Write-Output "== 1/5 compile java =="
 Remove-Item -Recurse -Force "$build\classes" -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path "$build\classes" | Out-Null
-& $java -jar $ecj -8 -nowarn -cp "$androidJar;$apiJar" -d "$build\classes" "$base\src\io\github\voreul_ch\installerpurify\MainHook.java"
+& $java -jar $ecj -8 -nowarn -cp "$androidJar;$apiJar" -d "$build\classes" "$base\src\io\github\voreulch\installerpurify\MainHook.java"
 if ($LASTEXITCODE -ne 0) { throw "ecj compile failed" }
 
 Write-Output "== 2/5 dex =="
