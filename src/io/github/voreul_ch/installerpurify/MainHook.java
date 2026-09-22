@@ -3,6 +3,7 @@ package io.github.voreul_ch.installerpurify;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
+import android.view.View;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -26,6 +27,118 @@ public class MainHook implements IXposedHookLoadPackage {
         final ClassLoader cl = lpparam.classLoader;
         hookSecurityCheck(cl);
         hookFingerprintAuth(cl);
+        hookSafeModeBanner(cl);
+        hookAdRecommend(cl);
+        hookSafeResultBanner(cl);
+        hookCleanCacheCard(cl);
+        hookDiversionWait(cl);
+        hookNetwork(cl);
+    }
+
+    private void hookDiversionWait(ClassLoader cl) {
+        try {
+            final Class<?> respClz = cl.loadClass("com.hihonor.packageinstaller.entity.resp.DiversionResp");
+            XposedHelpers.findAndHookMethod("g82", cl, "f",
+                    String.class, String.class, String.class, String.class, long.class, String.class,
+                    int.class, long.class, int.class, int.class, "g82$d", Runnable.class,
+                    new XC_MethodReplacement() {
+                        @Override
+                        protected Object replaceHookedMethod(MethodHookParam param) throws Throwable {
+                            Object dVar = param.args[10];
+                            java.lang.reflect.Method m = dVar.getClass().getMethod("a", respClz);
+                            m.setAccessible(true);
+                            m.invoke(dVar, new Object[]{null});
+                            return null;
+                        }
+                    });
+            XposedBridge.log(TAG + "hook g82.f ok");
+        } catch (Throwable t) {
+            XposedBridge.log(TAG + "hook g82.f failed: " + t);
+        }
+    }
+
+    private void hookCleanCacheCard(ClassLoader cl) {
+        try {
+            XposedHelpers.findAndHookMethod("z62", cl, "E",
+                    "com.hihonor.packageinstaller.entity.resp.SafeModeCards",
+                    XC_MethodReplacement.returnConstant(true));
+            XposedBridge.log(TAG + "hook z62.E ok");
+        } catch (Throwable t) {
+            XposedBridge.log(TAG + "hook z62.E failed: " + t);
+        }
+    }
+
+    private void hookNetwork(ClassLoader cl) {
+        try {
+            XposedHelpers.findAndHookMethod("java.net.Socket", cl, "connect", java.net.SocketAddress.class, int.class,
+                    new de.robv.android.xposed.XC_MethodHook() {
+                        @Override
+                        protected void beforeHookedMethod(MethodHookParam param) {
+                            param.setThrowable(new java.net.SocketException("blocked by HonorInstallerPurify"));
+                        }
+                    });
+            XposedBridge.log(TAG + "hook Socket.connect ok");
+        } catch (Throwable t) {
+            XposedBridge.log(TAG + "hook Socket.connect failed: " + t);
+        }
+    }
+
+    private void hookSafeModeBanner(ClassLoader cl) {
+        try {
+            XposedHelpers.findAndHookMethod("r12", cl, "j",
+                    "com.hihonor.packageinstaller.utils.CardTipsRecord", String.class, boolean.class, String.class,
+                    XC_MethodReplacement.returnConstant(false));
+            XposedBridge.log(TAG + "hook r12.j ok");
+        } catch (Throwable t) {
+            XposedBridge.log(TAG + "hook r12.j failed: " + t);
+        }
+        try {
+            XposedHelpers.findAndHookMethod("r12", cl, "s",
+                    "com.android.packageinstaller.PackageInstallerActivity", "com.hihonor.packageinstaller.rbi.RbiTempBean",
+                    XC_MethodReplacement.returnConstant(null));
+            XposedBridge.log(TAG + "hook r12.s ok");
+        } catch (Throwable t) {
+            XposedBridge.log(TAG + "hook r12.s failed: " + t);
+        }
+    }
+
+    private void hookAdRecommend(ClassLoader cl) {
+        try {
+            XposedHelpers.findAndHookMethod("com.hihonor.packageinstaller.presenter.AbstractAdBusinessPresenter", cl, "l",
+                    "kt1", "com.hihonor.packageinstaller.rbi.RbiTempBean", "ef2", boolean.class,
+                    XC_MethodReplacement.returnConstant(null));
+            XposedBridge.log(TAG + "hook ad presenter l ok");
+        } catch (Throwable t) {
+            XposedBridge.log(TAG + "hook ad presenter l failed: " + t);
+        }
+    }
+
+    private void hookSafeResultBanner(ClassLoader cl) {
+        hideAfter(cl, "e2", "W0");
+        hideAfter(cl, "k2", "Y0");
+    }
+
+    private void hideAfter(ClassLoader cl, String methodName, final String fieldName) {
+        try {
+            XposedHelpers.findAndHookMethod("com.android.packageinstaller.PackageInstallerActivity", cl, methodName,
+                    new de.robv.android.xposed.XC_MethodHook() {
+                        @Override
+                        protected void afterHookedMethod(MethodHookParam param) {
+                            try {
+                                Object v = XposedHelpers.getObjectField(param.thisObject, fieldName);
+                                if (v instanceof View) {
+                                    ((View) v).setVisibility(View.GONE);
+                                    XposedBridge.log(TAG + "hidden result banner via " + fieldName);
+                                }
+                            } catch (Throwable t) {
+                                XposedBridge.log(TAG + "hide " + fieldName + " error: " + t);
+                            }
+                        }
+                    });
+            XposedBridge.log(TAG + "hook " + methodName + " ok");
+        } catch (Throwable t) {
+            XposedBridge.log(TAG + "hook " + methodName + " failed: " + t);
+        }
     }
 
     private void hookSecurityCheck(final ClassLoader cl) {
