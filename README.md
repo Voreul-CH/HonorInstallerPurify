@@ -37,6 +37,9 @@ lock-screen prompt may also gate the install. This module removes both.
 | --- | --- |
 | 跳过联网安全检测 / Skip online security check | Hook 检测总入口 `ly1.h()`，直接投递官方「免检测通过」结果；安装按钮秒亮，不转圈、不联网、不调手机管家扫描 / Hooks the single check entry point and immediately delivers the system's own "trusted source, no check needed" result — install button lights up instantly |
 | 跳过安装前指纹 / Skip pre-install fingerprint | Hook 安装流程指纹入口 `qf2.g()`，直接回调验证成功 / Hooks the install-flow fingerprint entry and reports success immediately |
+| 隐藏"未发现风险"横幅 / Hide "no risk" banner | Hook `PackageInstallerActivity.e2()/k2()`，结果横幅渲染后置为 GONE / Hides the check-result banner after render |
+| 隐藏"安全模式"推广卡片 / Hide safe-mode promo card | Hook 卡片显示决策 `r12.j()` 恒返 false、底部弹窗 `r12.s()` 置空，安装前后页面均生效 / Gates the safe-mode card off on both pre- and post-install pages |
+| 屏蔽"用过该应用的还喜欢"推荐 / Block "you may also like" strip | Hook 广告请求入口 `AbstractAdBusinessPresenter.l()` 置空，直接不发起广告请求 / No-ops the ad request entry so the recommendation strip never loads |
 | 不动设置页验证 / Settings prompts untouched | 安装器设置页的指纹入口 `qf2.h()` 未 Hook，其余系统行为不受影响 / The settings-page auth entry is deliberately left alone |
 
 ## 原理 / How it works
@@ -54,16 +57,20 @@ lock-screen prompt may also gate the install. This module removes both.
   └─ iz1.p() / my1  →  qf2.g()  →  FusionAuth 指纹/锁屏弹窗
 ```
 
-模块共 2 个 Hook：
+模块当前共 6 组 Hook：
 
 1. **`ly1.h(boolean, sy1)`** → 替换为：调用官方自带的「可信来源免检测」结果工厂 `ly1.a()` 构造通过结果，主线程直接回调 `sy1.b()`。这是系统给可信来源设计的原生放行路径，后续 UI 流程零改动。
-2. **`qf2.g(Context, qf2$a)`** → 替换为：直接回调 `onAuthStart` + `onAuthResult(true)`。
+2. **`qf2.g(Context, qf2$a)`** → 替换为：直接回调 `onAuthStart` + `onAuthResult(true)`，指纹弹窗不再出现。
+3. **`r12.j(...)` 恒返 false + `r12.s(...)` 置空** → 安全模式推广卡片的显示决策与底部弹窗同时失效，安装前/安装后页面通杀。
+4. **`PackageInstallerActivity.e2()/k2()` 后置 `setVisibility(GONE)`** → 普通样式与安全模式样式的「未发现风险」结果横幅渲染后立即隐藏。
+5. **`AbstractAdBusinessPresenter.l(...)` 置空** → 三个页面的广告 Presenter 均继承该方法，置空后推荐条不再发起广告请求。
 
 The detection chain was recovered with jadx (obfuscated class names verified
-directly in the DEX). The module has exactly two hooks: it replaces the single
-check entry `ly1.h` with an immediate delivery of the system's own
-"trusted-source pass" result (`ly1.a()`), and replaces the install-flow
-fingerprint entry `qf2.g` with an instant success callback.
+directly in the DEX). The core hook replaces the single check entry `ly1.h`
+with an immediate delivery of the system's own "trusted-source pass" result
+(`ly1.a()`); the fingerprint entry `qf2.g` gets an instant success callback;
+additional hooks hide the safe-mode promo card, the "no risk" banner and the
+recommendation strip.
 
 ## 环境要求 / Requirements
 
@@ -128,6 +135,11 @@ at any JRE 8+.
 │   └── MainHook.java          # 全部 Hook 逻辑 / all hook logic
 └── build.ps1                  # 一键构建流水线 / one-shot build pipeline
 ```
+
+## 版本历史 / Changelog
+
+* **2.0**（2026-09-22）：界面净化——隐藏「未发现风险」横幅、「安全模式 建议开启」卡片（安装前后两页）、屏蔽「用过该应用的还喜欢」推荐条；修复广告 Hook 的混淆类名解析。
+* **1.0**（2026-09-22）：首个版本——跳过联网安全检测与安装前指纹验证。
 
 ## 免责声明 / Disclaimer
 
