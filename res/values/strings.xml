@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">荣耀安装器净化</string>
+    <string-array name="xposedscope">
+        <item>com.android.packageinstaller</item>
+    </string-array>
+</resources>
